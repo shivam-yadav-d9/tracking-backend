@@ -1,8 +1,13 @@
 import LiveLocation from "../models/LiveLocation.js";
+import { recordPoint } from "./routeHistory.controller.js";
 
 /**
  * Update Delivery/Fitter Location
  * POST /api/tracking/update-location
+ * body: { employeeId, latitude, longitude, orderId?, employeeName?, role?, speed?, heading? }
+ *
+ * Every update is added to today's route history (GET /api/tracking/history/...).
+ * With an orderId it is also the live location customers follow for that order.
  */
 export const updateLocation = async (req, res) => {
     try {
@@ -13,13 +18,40 @@ export const updateLocation = async (req, res) => {
             longitude,
             speed = 0,
             heading = 0,
+            employeeName,
+            role,
         } = req.body;
 
         // Basic validation
-        if (!employeeId || !orderId || latitude == null || longitude == null) {
+        if (!employeeId || latitude == null || longitude == null) {
             return res.status(400).json({
                 success: false,
-                message: "employeeId, orderId, latitude and longitude are required."
+                message: "employeeId, latitude and longitude are required."
+            });
+        }
+
+        // Route history — a failure here must not stop the live update
+        try {
+            await recordPoint({
+                employeeId: String(employeeId),
+                employeeName,
+                role,
+                orderId,
+                latitude,
+                longitude,
+                speed,
+                heading,
+            });
+        } catch (historyError) {
+            console.error("Route history save failed:", historyError);
+        }
+
+        // No order: history only
+        if (!orderId) {
+            return res.status(200).json({
+                success: true,
+                message: "Location saved to route history",
+                data: null,
             });
         }
 
