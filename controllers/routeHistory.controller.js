@@ -23,9 +23,15 @@ const distanceMeters = (a, b) => {
   return 2 * R * Math.asin(Math.sqrt(h));
 };
 
+// The app sends a location every 15 minutes; every one is pushed into the
+// day's `points` array (nothing is overwritten). An update arriving within
+// MIN_GAP_MS of the last point is a duplicate (e.g. screen reopened) and skipped.
+const MIN_GAP_MS = 60 * 1000;
+
 /**
  * Add one point to the employee's route for today.
  * Called from POST /api/tracking/update-location.
+ * One document per employee per day; points are pushed into its array.
  */
 export const recordPoint = async ({
   employeeId,
@@ -59,6 +65,8 @@ export const recordPoint = async ({
 
   let step = 0;
   if (last) {
+    const sameJob = (last.orderId || null) === point.orderId;
+    if (sameJob && at - new Date(last.at) < MIN_GAP_MS) return; // duplicate
     step = distanceMeters(last, point);
     const seconds = Math.max(1, (at - new Date(last.at)) / 1000);
     if (step / seconds > MAX_SPEED_MPS) return; // impossible jump — bad fix

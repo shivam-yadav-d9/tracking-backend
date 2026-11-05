@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-// Route history: one document per employee per day (IST), with every
-// location update of that day in `points` (oldest first).
-// At one update a minute that is at most ~1,440 points a day.
+// Route history: one document per employee per day (IST). The app sends a
+// location every 15 minutes and each one is pushed into `points` (oldest
+// first, ~96 a day at most). Nothing is overwritten.
 const PointSchema = new mongoose.Schema(
   {
     latitude: { type: Number, required: true },
@@ -26,7 +26,7 @@ const RouteHistorySchema = new mongoose.Schema(
 
     points: { type: [PointSchema], default: [] },
 
-    // Total distance travelled this day (GPS jitter under MIN_STEP ignored)
+    // Straight-line distance between the saved points (the app shows the road distance)
     distanceMeters: { type: Number, default: 0 },
 
     startedAt: { type: Date },

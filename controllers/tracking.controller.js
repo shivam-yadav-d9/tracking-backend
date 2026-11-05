@@ -6,7 +6,7 @@ import { recordPoint } from "./routeHistory.controller.js";
  * POST /api/tracking/update-location
  * body: { employeeId, latitude, longitude, orderId?, employeeName?, role?, speed?, heading? }
  *
- * Every update is added to today's route history (GET /api/tracking/history/...).
+ * Every update is pushed into today's route history (the app sends one every 15 min) (GET /api/tracking/history/...).
  * With an orderId it is also the live location customers follow for that order.
  */
 export const updateLocation = async (req, res) => {
